@@ -42,7 +42,7 @@
         var title = getTitle(event.element);
 
         event.menu.push({
-            title: 'Добавить в фильмотеку',
+            title: 'Скачать в мою фильмотеку',
             onSelect: function () {
                 try {
                     if (
