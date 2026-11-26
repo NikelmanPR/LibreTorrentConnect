@@ -201,7 +201,7 @@
             Lampa.SettingsApi.addComponent({
                 component: 'ltc_diagnostic',
                 name: 'Libre Torrent Connect',
-                icon: '<svg viewBox="0 0 24 24"></svg>'
+                icon: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17v3h14v-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
             });
 
             Lampa.SettingsApi.addParam({
@@ -218,7 +218,11 @@
                     description:
                         'Версия ' + VERSION +
                         ' · Статус: активен. ' +
-                        'Добавление торрентов и получение статусов из LTConnect.'
+                        'Добавление и загрузка торрентов через LTConnect, а также мониторинг статусов.' +
+                        '<br><br><b>Инструкция:</b><br>' +
+                        '1. Скачайте и установите LTConnect;<br>' +
+                        '2. Выберите карточку → Смотреть → Торрент → длительное нажатие на желаемый торрент → Скачать в мою фильмотеку;<br>' +
+                        '3. После загрузки фильм будет доступен по пути, выбранному в LTConnect.'
                 }
             });
 
