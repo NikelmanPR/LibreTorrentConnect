@@ -1,7 +1,9 @@
 (function () {
     'use strict';
 
+    var VERSION = '1.2.1';
     var FLAG = '__LTS_LTC_V1_2_REGISTERED__';
+
     if (window[FLAG]) return;
 
     var EVENT_URL = 'http://127.0.0.1:17865/events';
@@ -21,16 +23,13 @@
 
     function getTitle(element) {
         if (!element) return '';
-
         return String(
             element.Title ||
             element.title ||
             element.name ||
             element.path_human ||
             ''
-        )
-            .replace(/\s+/g, ' ')
-            .trim();
+        );
     }
 
     function notify(message) {
@@ -40,10 +39,6 @@
     }
 
     function handleEvent(item) {
-        var name = String(item.name || 'Торрент')
-            .replace(/\s+/g, ' ')
-            .trim();
-
         switch (item.type) {
             case 'added':
                 notify('LTC: торрент добавлен');
@@ -61,11 +56,11 @@
                 break;
 
             case 'started':
-                notify('LTC: загрузка ' + name + ' началась');
+                notify('LTC: загрузка началась');
                 break;
 
             case 'finished':
-                notify('LTC: загрузка ' + name + ' завершена!');
+                notify('LTC: загрузка завершена!');
                 break;
         }
     }
@@ -113,13 +108,17 @@
     }
 
     function addMenuAction(event) {
-        if (!event ||
+        if (
+            !event ||
             event.type !== 'onlong' ||
             !event.menu ||
-            !event.element) return;
+            !event.element
+        ) return;
 
-        if (typeof event.menu.push !== 'function' ||
-            event.__ltsLtcAdded) return;
+        if (
+            typeof event.menu.push !== 'function' ||
+            event.__ltsLtcAdded
+        ) return;
 
         var magnet = getMagnet(event.element);
         if (!magnet) return;
@@ -128,12 +127,14 @@
         var title = getTitle(event.element);
 
         event.menu.push({
-            title: 'Скачать в мою фильмотеку',
+            title: 'Скачать в мою библиотеку',
 
             onSelect: function () {
                 try {
-                    if (!window.AndroidJS ||
-                        typeof window.AndroidJS.openTorrentLink !== 'function') {
+                    if (
+                        !window.AndroidJS ||
+                        typeof window.AndroidJS.openTorrentLink !== 'function'
+                    ) {
                         notify('LTC: AndroidJS недоступен');
                         return;
                     }
@@ -152,7 +153,7 @@
                         notify('LTC: не удалось передать magnet');
                     }
                 } catch (error) {
-                    console.error('[LTConnect]', error);
+                    console.error('[LTS][LTC]', error);
                     notify('LTC: не удалось передать magnet');
                 }
             }
@@ -162,27 +163,32 @@
     function start() {
         if (window[FLAG]) return;
 
-        if (!window.Lampa ||
-            !Lampa.Listener ||
-            !Lampa.SettingsApi) return;
+        if (!window.Lampa || !Lampa.Listener || !Lampa.SettingsApi) {
+            return;
+        }
 
         try {
             Lampa.SettingsApi.addComponent({
                 component: 'lts_diagnostic',
-                name: 'LTConnect',
+                name: 'LTS',
                 icon: '<svg viewBox="0 0 24 24"></svg>'
             });
 
             Lampa.SettingsApi.addParam({
                 component: 'lts_diagnostic',
+
                 param: {
                     name: 'lts_ltc_status',
                     type: 'static',
                     default: true
                 },
+
                 field: {
-                    name: 'LTConnect',
-                    description: 'LTConnect 1.2: тихое добавление и получение статусов.'
+                    name: 'LibreTorrent Connect',
+                    description:
+                        'Версия ' + VERSION +
+                        ' · Статус: активен. ' +
+                        'Тихое добавление и получение статусов из LTConnect.'
                 }
             });
 
@@ -196,10 +202,13 @@
             }
 
             window[FLAG] = true;
-            console.log('[LTConnect] Version 1.2 registered');
+
+            console.log(
+                '[LTS][LTC] Version ' + VERSION + ' registered'
+            );
 
         } catch (error) {
-            console.error('[LTConnect] Registration error:', error);
+            console.error('[LTS][LTC] Registration error:', error);
         }
     }
 
