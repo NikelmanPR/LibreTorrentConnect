@@ -13,69 +13,113 @@
         if (!element) return '';
         if (element.MagnetUri) return String(element.MagnetUri);
         if (/^magnet:/i.test(element.Link || '')) return String(element.Link);
-        if (element.torrent_hash) return 'magnet:?xt=urn:btih:' + String(element.torrent_hash);
+        if (element.torrent_hash) {
+            return 'magnet:?xt=urn:btih:' + String(element.torrent_hash);
+        }
         return '';
     }
 
     function getTitle(element) {
         if (!element) return '';
-        return String(element.Title || element.title || element.name || element.path_human || '');
+
+        return String(
+            element.Title ||
+            element.title ||
+            element.name ||
+            element.path_human ||
+            ''
+        )
+            .replace(/\s+/g, ' ')
+            .trim();
     }
 
     function notify(message) {
-        if (window.Lampa && Lampa.Noty) Lampa.Noty.show(message);
+        if (window.Lampa && Lampa.Noty) {
+            Lampa.Noty.show(message);
+        }
     }
 
     function handleEvent(item) {
+        var name = String(item.name || 'Торрент')
+            .replace(/\s+/g, ' ')
+            .trim();
+
         switch (item.type) {
             case 'added':
                 notify('LTC: торрент добавлен');
                 break;
+
             case 'duplicate':
                 notify('LTC: торрент уже есть в библиотеке');
                 break;
+
             case 'error':
-                notify('LTC: не удалось добавить — ' + (item.reason || 'неизвестная ошибка'));
+                notify(
+                    'LTC: не удалось добавить — ' +
+                    (item.reason || 'неизвестная ошибка')
+                );
                 break;
+
             case 'started':
-                notify('LTC: загрузка началась');
+                notify('LTC: загрузка ' + name + ' началась');
                 break;
+
             case 'finished':
-                notify('LTC: загрузка завершена!');
+                notify('LTC: загрузка ' + name + ' завершена!');
                 break;
         }
     }
 
     function pollEvents() {
         if (!window.fetch) return;
+
         fetch(EVENT_URL + '?after=' + eventCursor, {
             method: 'GET',
             cache: 'no-store'
         })
             .then(function (response) {
-                if (!response.ok) throw new Error('HTTP ' + response.status);
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
                 return response.json();
             })
             .then(function (data) {
-                var events = data && Array.isArray(data.events) ? data.events : [];
+                var events = data && Array.isArray(data.events)
+                    ? data.events
+                    : [];
+
                 if (firstPoll && events.length === 0) {
                     eventCursor = Number(data.latest || 0);
                     firstPoll = false;
                     return;
                 }
+
                 firstPoll = false;
+
                 events.forEach(function (item) {
                     handleEvent(item);
-                    eventCursor = Math.max(eventCursor, Number(item.id || 0));
+                    eventCursor = Math.max(
+                        eventCursor,
+                        Number(item.id || 0)
+                    );
                 });
-                eventCursor = Math.max(eventCursor, Number(data.latest || 0));
+
+                eventCursor = Math.max(
+                    eventCursor,
+                    Number(data.latest || 0)
+                );
             })
             .catch(function () {});
     }
 
     function addMenuAction(event) {
-        if (!event || event.type !== 'onlong' || !event.menu || !event.element) return;
-        if (typeof event.menu.push !== 'function' || event.__ltsLtcAdded) return;
+        if (!event ||
+            event.type !== 'onlong' ||
+            !event.menu ||
+            !event.element) return;
+
+        if (typeof event.menu.push !== 'function' ||
+            event.__ltsLtcAdded) return;
 
         var magnet = getMagnet(event.element);
         if (!magnet) return;
@@ -85,6 +129,7 @@
 
         event.menu.push({
             title: 'Скачать в мою фильмотеку',
+
             onSelect: function () {
                 try {
                     if (!window.AndroidJS ||
@@ -94,6 +139,7 @@
                     }
 
                     notify('LTC: отправка magnet…');
+
                     var result = window.AndroidJS.openTorrentLink(
                         magnet,
                         JSON.stringify({
@@ -115,7 +161,10 @@
 
     function start() {
         if (window[FLAG]) return;
-        if (!window.Lampa || !Lampa.Listener || !Lampa.SettingsApi) return;
+
+        if (!window.Lampa ||
+            !Lampa.Listener ||
+            !Lampa.SettingsApi) return;
 
         try {
             Lampa.SettingsApi.addComponent({
@@ -141,12 +190,14 @@
             Lampa.Listener.follow('torrent_file', addMenuAction);
 
             pollEvents();
+
             if (!pollTimer) {
                 pollTimer = setInterval(pollEvents, 1200);
             }
 
             window[FLAG] = true;
             console.log('[LTConnect] Version 1.2 registered');
+
         } catch (error) {
             console.error('[LTConnect] Registration error:', error);
         }
