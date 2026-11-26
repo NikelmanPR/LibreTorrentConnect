@@ -2,7 +2,7 @@
     'use strict';
 
     var VERSION = '1.2.1';
-    var FLAG = '__LTS_LTC_V1_2_REGISTERED__';
+    var FLAG = '__LTC_REGISTERED__';
 
     if (window[FLAG]) return;
 
@@ -13,16 +13,25 @@
 
     function getMagnet(element) {
         if (!element) return '';
-        if (element.MagnetUri) return String(element.MagnetUri);
-        if (/^magnet:/i.test(element.Link || '')) return String(element.Link);
+
+        if (element.MagnetUri) {
+            return String(element.MagnetUri);
+        }
+
+        if (/^magnet:/i.test(element.Link || '')) {
+            return String(element.Link);
+        }
+
         if (element.torrent_hash) {
             return 'magnet:?xt=urn:btih:' + String(element.torrent_hash);
         }
+
         return '';
     }
 
     function getTitle(element) {
         if (!element) return '';
+
         return String(
             element.Title ||
             element.title ||
@@ -76,6 +85,7 @@
                 if (!response.ok) {
                     throw new Error('HTTP ' + response.status);
                 }
+
                 return response.json();
             })
             .then(function (data) {
@@ -93,6 +103,7 @@
 
                 events.forEach(function (item) {
                     handleEvent(item);
+
                     eventCursor = Math.max(
                         eventCursor,
                         Number(item.id || 0)
@@ -117,13 +128,14 @@
 
         if (
             typeof event.menu.push !== 'function' ||
-            event.__ltsLtcAdded
+            event.__ltcAdded
         ) return;
 
         var magnet = getMagnet(event.element);
         if (!magnet) return;
 
-        event.__ltsLtcAdded = true;
+        event.__ltcAdded = true;
+
         var title = getTitle(event.element);
 
         event.menu.push({
@@ -153,7 +165,7 @@
                         notify('LTC: не удалось передать magnet');
                     }
                 } catch (error) {
-                    console.error('[LTS][LTC]', error);
+                    console.error('[LTC]', error);
                     notify('LTC: не удалось передать magnet');
                 }
             }
@@ -169,26 +181,26 @@
 
         try {
             Lampa.SettingsApi.addComponent({
-                component: 'lts_diagnostic',
-                name: 'LTS',
+                component: 'ltc_diagnostic',
+                name: 'Libre Torrent Connect',
                 icon: '<svg viewBox="0 0 24 24"></svg>'
             });
 
             Lampa.SettingsApi.addParam({
-                component: 'lts_diagnostic',
+                component: 'ltc_diagnostic',
 
                 param: {
-                    name: 'lts_ltc_status',
+                    name: 'ltc_status',
                     type: 'static',
                     default: true
                 },
 
                 field: {
-                    name: 'LibreTorrent Connect',
+                    name: 'Libre Torrent Connect',
                     description:
                         'Версия ' + VERSION +
                         ' · Статус: активен. ' +
-                        'Тихое добавление и получение статусов из LTConnect.'
+                        'Добавление торрентов и получение статусов из LTConnect.'
                 }
             });
 
@@ -204,11 +216,11 @@
             window[FLAG] = true;
 
             console.log(
-                '[LTS][LTC] Version ' + VERSION + ' registered'
+                '[LTC] Libre Torrent Connect ' + VERSION + ' registered'
             );
 
         } catch (error) {
-            console.error('[LTS][LTC] Registration error:', error);
+            console.error('[LTC] Registration error:', error);
         }
     }
 
@@ -216,7 +228,9 @@
         start();
     } else if (window.Lampa && Lampa.Listener) {
         Lampa.Listener.follow('app', function (event) {
-            if (event.type === 'ready') start();
+            if (event.type === 'ready') {
+                start();
+            }
         });
     }
 })();
