@@ -47,29 +47,47 @@
         }
     }
 
+    function getEventName(item) {
+        return item && item.name != null
+            ? String(item.name).trim()
+            : '';
+    }
+
     function handleEvent(item) {
+        var name = getEventName(item);
+
         switch (item.type) {
             case 'added':
-                notify('LTC: торрент добавлен');
+                notify(name
+                    ? 'LTC: торрент «' + name + '» добавлен'
+                    : 'LTC: торрент добавлен');
                 break;
 
             case 'duplicate':
-                notify('LTC: торрент уже есть в библиотеке');
+                notify(name
+                    ? 'LTC: «' + name + '» уже есть в библиотеке'
+                    : 'LTC: торрент уже есть в библиотеке');
                 break;
 
             case 'error':
                 notify(
-                    'LTC: не удалось добавить — ' +
+                    'LTC: не удалось добавить' +
+                    (name ? ' «' + name + '»' : '') +
+                    ' — ' +
                     (item.reason || 'неизвестная ошибка')
                 );
                 break;
 
             case 'started':
-                notify('LTC: загрузка началась');
+                notify(name
+                    ? 'LTC: загрузка ' + name + ' началась!'
+                    : 'LTC: загрузка началась!');
                 break;
 
             case 'finished':
-                notify('LTC: загрузка завершена!');
+                notify(name
+                    ? 'LTC: загрузка ' + name + ' завершена!'
+                    : 'LTC: загрузка завершена!');
                 break;
         }
     }
