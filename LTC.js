@@ -1,30 +1,15 @@
 (function () {
     'use strict';
 
-    var VERSION = '1.2.3';
+    var VERSION = '1.2.2';
     var FLAG = '__LTC_REGISTERED__';
-    var EVENT_URL = 'http://127.0.0.1:17865/events';
 
     if (window[FLAG]) return;
 
+    var EVENT_URL = 'http://127.0.0.1:17865/events';
     var eventCursor = 0;
     var firstPoll = true;
     var pollTimer = null;
-    var bootTimer = null;
-
-    function log(message, error) {
-        if (error) {
-            console.error('[LTC]', message, error);
-        } else {
-            console.log('[LTC]', message);
-        }
-    }
-
-    function notify(message) {
-        if (window.Lampa && Lampa.Noty) {
-            Lampa.Noty.show(message);
-        }
-    }
 
     function getMagnet(element) {
         if (!element) return '';
@@ -56,6 +41,12 @@
         );
     }
 
+    function notify(message) {
+        if (window.Lampa && Lampa.Noty) {
+            Lampa.Noty.show(message);
+        }
+    }
+
     function getEventName(item) {
         return item && item.name != null
             ? String(item.name).trim()
@@ -63,8 +54,6 @@
     }
 
     function handleEvent(item) {
-        if (!item || !item.type) return;
-
         var name = getEventName(item);
 
         switch (item.type) {
@@ -134,9 +123,7 @@
                     Number(data.latest || 0)
                 );
             })
-            .catch(function (error) {
-                log('Event polling error', error);
-            });
+            .catch(function () {});
     }
 
     function addMenuAction(event) {
@@ -153,7 +140,6 @@
         ) return;
 
         var magnet = getMagnet(event.element);
-
         if (!magnet) return;
 
         event.__ltcAdded = true;
@@ -170,9 +156,10 @@
                         typeof window.AndroidJS.openTorrentLink !== 'function'
                     ) {
                         notify('LTC: AndroidJS недоступен');
-                        log('AndroidJS.openTorrentLink is unavailable');
                         return;
                     }
+
+                    notify('LTC: отправка magnet…');
 
                     var result = window.AndroidJS.openTorrentLink(
                         magnet,
@@ -186,42 +173,9 @@
                         notify('LTC: не удалось передать magnet');
                     }
                 } catch (error) {
-                    log('Magnet transfer error', error);
+                    console.error('[LTC]', error);
                     notify('LTC: не удалось передать magnet');
                 }
-            }
-        });
-    }
-
-    function registerSettings() {
-        Lampa.SettingsApi.addComponent({
-            component: 'ltc_diagnostic',
-            name: 'Libre Torrent Connect',
-            icon: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17v3h14v-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-        });
-
-        Lampa.SettingsApi.addParam({
-            component: 'ltc_diagnostic',
-
-            param: {
-                name: 'ltc_status',
-                type: 'static',
-                default: true
-            },
-
-            field: {
-                name: 'Libre Torrent Connect',
-                description:
-                    'Версия ' + VERSION +
-                    ' · Статус: активен.' +
-                    '<br><br>' +
-                    'Добавление и загрузка торрентов через LTConnect.' +
-                    '<br><br><b>Инструкция:</b><br>' +
-                    '1. Установите LTConnect;<br>' +
-                    '2. Откройте карточку → Смотреть → Торрент;<br>' +
-                    '3. Выполните длительное нажатие на нужный торрент;<br>' +
-                    '4. Выберите «Скачать в мою фильмотеку»;<br>' +
-                    '5. Файл будет доступен в папке, выбранной в LTConnect.'
             }
         });
     }
@@ -229,17 +183,38 @@
     function start() {
         if (window[FLAG]) return;
 
-        if (
-            !window.Lampa ||
-            !Lampa.Listener ||
-            !Lampa.SettingsApi ||
-            !window.appready
-        ) {
+        if (!window.Lampa || !Lampa.Listener || !Lampa.SettingsApi) {
             return;
         }
 
         try {
-            registerSettings();
+            Lampa.SettingsApi.addComponent({
+                component: 'ltc_diagnostic',
+                name: 'Libre Torrent Connect',
+                icon: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17v3h14v-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+            });
+
+            Lampa.SettingsApi.addParam({
+                component: 'ltc_diagnostic',
+
+                param: {
+                    name: 'ltc_status',
+                    type: 'static',
+                    default: true
+                },
+
+                field: {
+                    name: 'Libre Torrent Connect',
+                    description:
+                        'Версия ' + VERSION +
+                        ' · Статус: активен. ' +
+                        'Добавление и загрузка торрентов через LTConnect, а также мониторинг статусов.' +
+                        '<br><br><b>Инструкция:</b><br>' +
+                        '1. Скачайте и установите LTConnect;<br>' +
+                        '2. Выберите карточку → Смотреть → Торрент → длительное нажатие на желаемый торрент → Скачать в мою фильмотеку;<br>' +
+                        '3. После загрузки фильм будет доступен по пути, выбранному в LTConnect.'
+                }
+            });
 
             Lampa.Listener.follow('torrent', addMenuAction);
             Lampa.Listener.follow('torrent_file', addMenuAction);
@@ -251,29 +226,13 @@
             }
 
             window[FLAG] = true;
-            window.__LTC_VERSION__ = VERSION;
 
-            if (bootTimer) {
-                clearInterval(bootTimer);
-                bootTimer = null;
-            }
+            console.log(
+                '[LTC] Libre Torrent Connect ' + VERSION + ' registered'
+            );
 
-            log('Libre Torrent Connect ' + VERSION + ' registered');
         } catch (error) {
-            log('Registration error', error);
-        }
-    }
-
-    function boot() {
-        if (window[FLAG]) return;
-
-        if (
-            window.Lampa &&
-            Lampa.Listener &&
-            Lampa.SettingsApi &&
-            window.appready
-        ) {
-            start();
+            console.error('[LTC] Registration error:', error);
         }
     }
 
@@ -286,9 +245,4 @@
             }
         });
     }
-
-    if (!window[FLAG] && !bootTimer) {
-        bootTimer = setInterval(boot, 500);
-    }
-
 })();
